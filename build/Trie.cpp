@@ -1,4 +1,6 @@
+#include "httplib.h"
 #include <bits/stdc++.h>
+
 using namespace std;
 
 int getIndex(char x){
@@ -8,6 +10,7 @@ int getIndex(char x){
 
 const int SIZE = 36;
 const int RECOMMENDATIONS_SIZE = 5;
+
 class TrieNode {
 public:
     TrieNode* children[SIZE];
@@ -24,13 +27,11 @@ public:
     }
 };
 
-
 class Trie {
 private:
     TrieNode* root;
 
 public:
-
     Trie() {
         root = new TrieNode();
     }
@@ -59,11 +60,10 @@ public:
             }
             current = current->children[index];
         }
-        
         return listOfFiles = current->presentIn;
     }
 
-    vector<pair<int,string>> build_recs_dfs(char lastLetter,TrieNode* node){
+    vector<pair<int,string>> build_recs_dfs(char lastLetter, TrieNode* node){
 
         vector<pair<int,string>> recs;
         set<pair<int,string>> children_recs;
@@ -76,7 +76,7 @@ public:
             vector<pair<int,string>> child_recs = build_recs_dfs(letter,node->children[i]);
 
             for(int j=0;j<child_recs.size();j++){
-                
+
                 if(children_recs.size() < RECOMMENDATIONS_SIZE) {
                     children_recs.insert({child_recs[j].first,child_recs[j].second});
                 }else{
@@ -85,9 +85,7 @@ public:
                         children_recs.insert({child_recs[j].first,child_recs[j].second});
                     }
                 }
-
             }
-            
         }
 
         for(auto &it : children_recs){
@@ -137,24 +135,60 @@ public:
     }
 };
 
-int main(){
-    //testing
-    vector<string> tp1 = {"harsh","harsh","harshxy","harshxy","harshxy","harshxyz","harshxyz","harshxyz","harshxyz","harshtp","harsyrt","harshytiyu","abcsdsr","seziwuad"};
-    string str = "file";
+
+
+int main() {
     Trie tr;
+
+    vector<string> tp1 = {
+        "harsh","harsh","harshxy","harshxy","harshxy",
+        "harshxyz","harshxyz","harshxyz","harshxyz",
+        "harshtp","harsyrt","harshytiyu","abcsdsr","seziwuad",
+        "react", "reading", "real", "render"
+    };
+
+    string s = "file";
     for(int i=0;i<tp1.size();i++){
-        string s = "tp1";
         tr.insert(tp1[i],s);
     }
-    set<string> check = tr.search(tp1[0]);
-    cout<<check.size()<<endl;
-    check = tr.search("haryuqy");
-    cout<<"hi"<<endl;
-    tr.start_build();
-    cout<<"hi"<<endl;
-    vector<pair<int,string>> rec = tr.get_recs("h");
-    for(auto it : rec){
-        cout<<it.second<<" "<<it.first<<endl;
-    }
 
+    cout << "Building Trie recommendations..." << endl;
+    tr.start_build();
+    httplib::Server svr;
+    cout << "Server running on port 8080..." << endl;
+
+    svr.Get("/recommend", [&](const httplib::Request& req, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        res.set_header("Access-Control-Allow-Methods", "GET");
+        res.set_header("Access-Control-Allow-Headers", "Content-Type");
+
+        string prefix = "";
+        if (req.has_param("q")) {
+            prefix = req.get_param_value("q");
+        }
+
+        if(prefix.empty()) {
+            res.set_content("[]", "application/json");
+            return;
+        }
+
+        vector<pair<int,string>> recs = tr.get_recs(prefix);
+
+        string json = "[";
+        for(size_t i=0; i<recs.size(); ++i){
+            string suffix = recs[i].second;
+            if(suffix.length() > 0) suffix = suffix.substr(1);
+
+            string fullWord = prefix + suffix;
+
+            json += "{\"word\":\"" + fullWord + "\", \"score\":" + to_string(recs[i].first) + "}";
+
+            if(i < recs.size()-1) json += ",";
+        }
+        json += "]";
+
+        res.set_content(json, "application/json");
+    });
+
+    svr.listen("0.0.0.0", 8080);
 }
