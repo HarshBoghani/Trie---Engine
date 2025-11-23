@@ -56,6 +56,9 @@ public:
         TrieNode* current = root;
         set<string> listOfFiles;
         for (char ch : word) {
+            if (!(ch >= '0' && ch <= '9') && !(ch >= 'a' && ch <= 'z')) {
+                return listOfFiles;
+            }
             int index = getIndex(ch);
             if (!current->children[index]) {
                 return listOfFiles;
@@ -129,7 +132,11 @@ public:
         TrieNode* current = root;
         vector<pair<int,string>> recs;
         for (char ch : word) {
+            if (!(ch >= '0' && ch <= '9') && !(ch >= 'a' && ch <= 'z')) {
+                return recs;
+            }
             int index = getIndex(ch);
+            cout << index << endl;
             if (!current->children[index]) {
                 return recs;
             }
