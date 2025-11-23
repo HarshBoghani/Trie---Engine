@@ -36,7 +36,7 @@ int main() {
 
     loadStopWords();
 
-    for (auto &p : fs::directory_iterator("../data")) {
+    for (auto &p : fs::directory_iterator("./data")) {
         if (!fs::is_regular_file(p) || p.path().extension() != ".txt") continue;
 
         ifstream fin(p.path());

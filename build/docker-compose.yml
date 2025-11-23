@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./build/Dockerfile
+    container_name: trie-backend
+    ports:
+      - "8080:8080"
+    networks:
+      - trie-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trie-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - trie-network
+
+networks:
+  trie-network:
+    driver: bridge
